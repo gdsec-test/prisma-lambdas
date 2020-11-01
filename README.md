@@ -1,4 +1,6 @@
-# PRISMA-LAMBDAS
+# prisma-lambdas
+
+![Tartufo : main](https://github.com/gdcorp-infosec/prisma-lambdas/workflows/Tartufo%20Validate%20Workflow/badge.svg?branch=main)
 
 Repostiory for Prisma related lambda processes.
 
@@ -11,7 +13,7 @@ Repostiory for Prisma related lambda processes.
 
 ## How to run
 
-### Setup environment
+### Setup Local Environment
 ```bash
 $ python3 -m venv .venv-local
 $ source .venv-local/bin/activate
@@ -24,9 +26,6 @@ $ source .venv-local/bin/activate
 ```bash
 # Authenticate to specific AWS account.
 (venv-local) $ OKTA_DOMAIN="godaddy.okta.com"; KEY=$(openssl rand -hex 18); eval $(aws-okta-processor authenticate -e -o $OKTA_DOMAIN -u $USER -k $KEY)
-
-# Install necessary tools.
-(venv-local) $ pip install -r requirements.txt
 
 # Run sceptre to build infrasturcture & deploy lambda. ex) dev-private
 (venv-local) $ sceptre create dev-private
