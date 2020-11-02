@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy the IAM Custom Policy Service Catalog Product
+Parameters:
+  PolicyNameSuffix:
+    Type: String
+    Description: Name of custom Policy appended to TeamName-custom-
+  RoleNameSuffix:
+    Type: String
+    Description: Name of custom Role appended to TeamName-custom-
+
+Resources:
+  PrismaRegistryCleanerPolicy:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: IAMPolicy
+      ProvisioningArtifactName: 1.0.0
+      ProvisionedProductName: PrismaRegistryCleanerPolicy
+      ProvisioningParameters:
+        - Key: PolicyNameSuffix
+          Value: !Ref PolicyNameSuffix
+        - Key: PolicyJSON
+          Value: !Sub |
+            {
+               "Version": "2012-10-17",
+               "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "secretsmanager:DescribeSecret",
+                      "secretsmanager:GetSecretValue"
+                    ],
+                    "Resource": "arn:aws:secretsmanager:*:${AWS::AccountId}:secret:PrismaAccessKeys*"
+                  },
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "ec2:DescribeNetworkInterfaces",
+                      "ec2:CreateNetworkInterface",
+                      "ec2:DeleteNetworkInterface",
+                      "ec2:DescribeInstances",
+                      "ec2:AttachNetworkInterface"
+                    ],
+                    "Resource": "*"
+                  }
+               ]
+            }
+      Tags:
+        - Key: doNotShutDown
+          # change to false if it can be turned off outside of business hours
+          Value: "true"
+
+  PrismaRegistryCleanerLambdaRole:
+    DependsOn: PrismaRegistryCleanerPolicy
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: IAMRole
+      ProvisioningArtifactName: 1.0.9
+      ProvisionedProductName: PrismaRegistryCleanerLambdaRole
+      ProvisioningParameters:
+        - Key: AssumingServices
+          Value: lambda.amazonaws.com
+        - Key: RoleNameSuffix
+          Value: !Ref RoleNameSuffix
+        - Key: ManagedPolicyArns
+          Value:
+            !Join [ ",", [
+              !GetAtt PrismaRegistryCleanerPolicy.Outputs.PolicyARN,
+              !Sub "arn:aws:iam::${AWS::AccountId}:policy/AllowResourcesAccessToCloudWatchPolicy"
+            ] ]
+      Tags:
+        - Key: doNotShutDown
+          # change to false if it can be turned off outside of business hours
+          Value: "true"
+
+Outputs:
+  PrismaRegistryCleanerLambdaRoleNameSuffix:
+    Value: !Ref RoleNameSuffix
+    Description: S3 bucket name for keeping prisma lambdas.

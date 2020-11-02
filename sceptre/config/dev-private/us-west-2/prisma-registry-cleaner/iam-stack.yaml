@@ -1,0 +1,4 @@
+template_path: "{{ app_name }}/iam-stack.yaml"
+parameters:
+  PolicyNameSuffix: "{{ app_name }}-policy"
+  RoleNameSuffix: "{{ app_name }}-role"
