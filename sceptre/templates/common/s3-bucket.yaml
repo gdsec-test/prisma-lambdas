@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy the S3 Service Catalog Product
+Parameters:
+  BucketNameSuffix:
+    Type: String
+    MinLength: 1
+    AllowedPattern: "[a-z][a-z0-9-]+[a-z0-9]"
+    Description: Unique naming suffix for bucket
+  DevelopmentTeam:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: SSM Parameter for team owning the created resources.
+    Default: /AdminParams/Team/Name
+    AllowedValues:
+      - /AdminParams/Team/Name
+  DevelopmentEnvironment:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: SSM Parameter for development environment this will live in.
+    Default: /AdminParams/Team/Environment
+    AllowedValues:
+      - /AdminParams/Team/Environment
+
+Resources:
+  PrismaLambdasBucket:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: S3
+      ProvisioningArtifactName: 1.7.1
+      ProvisionedProductName: PrismaLambdasBucket
+      ProvisioningParameters:
+        # required parameter
+        - Key: BucketNameSuffix
+          Value: !Ref BucketNameSuffix
+        # common optional parameter
+        - Key: BucketPolicy
+          Value: Private
+      Tags:
+        - Key: doNotShutDown
+          Value: true
+
+Outputs:
+  PrismaLambdasBucketName:
+    Value: !GetAtt PrismaLambdasBucket.Outputs.BucketName
+    Description: S3 bucket name for keeping prisma lambdas.

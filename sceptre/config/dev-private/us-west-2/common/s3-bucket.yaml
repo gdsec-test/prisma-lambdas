@@ -1,0 +1,8 @@
+template_path: common/s3-bucket.yaml
+parameters:
+  BucketNameSuffix: "{{ project_code }}-bucket"
+hooks:
+  after_create:
+    - !cmd "echo '[+] Deploying Lambdas to s3://gd-security-{{ environment }}-{{ project_code }}/'"
+    - !cmd "echo '[+] Executing scripts/deploy.sh...'"
+    - !cmd "../scripts/deploy.sh create {{ environment }}"

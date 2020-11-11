@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Launch Lambda function product from SC
+Parameters:
+  RoleNameSuffix:
+    Type: String
+    Description: Name of custom Role appended to TeamName-custom-
+  ####################
+  # Lambda
+  ####################
+  HandlerName:
+    Type: String
+    Description: Name of the handler for Lambda function.
+  MemorySize:
+    Type: Number
+    Description: The Memory Size of the Lambda function.
+    Default: 128
+  Timeout:
+    Type: Number
+    Description: Duration after which lambda times out.
+  VpcSubnetIds:
+    Type: AWS::SSM::Parameter::Value<List<String>>
+    Description: SSM parameter referencing the private dx subnet IDs
+    Default: /AdminParams/VPC/PrivateSubnets
+  VpcSecurityGroup:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::SecurityGroup::Id>
+    Description: SSM parameter referencing the private security group ID
+    Default: /AdminParams/VPC/PrivateSG
+  LambdaName:
+    Type: String
+    Description: Name of lambda function
+  LambdaDescription:
+    Type: String
+    Description: Description about lambda function
+  S3BucketName:
+    Type: String
+    Description: S3 Bucket name where the lambda function zip is in.
+  LambdaZip:
+    Type: String
+    Description: Name of the zip file of a lambda funciton in S3 bucket
+  ####################
+  # CloudWatch Event
+  ####################
+  EventName:
+    Type: String
+    Description: Name of the Rule
+  EventDescription:
+    Type: String
+    Description: Description of the Rule
+  ScheduleExpression:
+    Type: String
+    Description: (conditional) You must specify this property, the EventPattern property, or both. The schedule or rate (frequency) that determines when CloudWatch Events runs the rule.
+    AllowedPattern: ^(|cron\(([^ ]* ){5}[^ ]*\)|rate\([1-9][0-9]* (minute?|minutes?|hours?|days?)\))$
+
+Resources:
+  PrismaRegistryCleanerLambdaFunction:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: Lambda
+      ProvisioningArtifactName: 2.3.0
+      ProvisionedProductName: PrismaRegistryCleanerLambdaFunction
+      ProvisioningParameters:
+        - Key: S3Bucket
+          Value: !Ref S3BucketName
+        - Key: S3Key
+          Value: !Ref LambdaZip
+        - Key: Handler
+          Value: !Ref HandlerName
+        - Key: Runtime
+          Value: python3.8
+        - Key: MemorySize
+          Value: !Ref MemorySize
+        - Key: Timeout
+          Value: !Ref Timeout
+        - Key: VpcSubnetIds
+          Value: !Join [ ",", !Ref VpcSubnetIds ]
+        - Key: VpcSecurityGroups
+          Value: !Ref VpcSecurityGroup
+        - Key: LambdaName
+          Value: !Ref LambdaName
+        - Key: LambdaDescription
+          Value: !Ref LambdaDescription
+        - Key: CustomIAMRoleNameSuffix
+          Value: !Ref RoleNameSuffix
+      Tags:
+        - Key: doNotShutDown
+          Value: true
+
+  PrismaRegistryCleanerEvent:
+    DependsOn: PrismaRegistryCleanerLambdaFunction
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: EventsRule
+      ProvisioningArtifactName: 1.0.5
+      ProvisionedProductName: PrismaRegistryCleanerEvent
+      ProvisioningParameters:
+        - Key: Name
+          Value: !Ref EventName
+        - Key: Description
+          Value: !Ref EventDescription
+        - Key: ScheduleExpression
+          Value: !Ref ScheduleExpression
+        - Key: TargetArnRef
+          Value: !GetAtt PrismaRegistryCleanerLambdaFunction.Outputs.LambdaFunctionArn
+        - Key: TargetId
+          Value: !GetAtt PrismaRegistryCleanerLambdaFunction.Outputs.LambdaFunctionName
+      Tags:
+        - Key: doNotShutDown
+          # change to false if it can be turned off outside of business hours
+          Value: true
+
+
+  PrismaRegistryCleanerEventPermission:
+    DependsOn: PrismaRegistryCleanerEvent
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: LambdaPermission
+      ProvisioningArtifactName: 1.0.1
+      ProvisionedProductName: PrismaRegistryCleanerEventPermission
+      ProvisioningParameters:
+        - Key: SourceArn
+          Value: !GetAtt PrismaRegistryCleanerEvent.Outputs.Arn
+        - Key: FunctionName
+          Value: !GetAtt PrismaRegistryCleanerLambdaFunction.Outputs.LambdaFunctionName
+        - Key: Action
+          Value: "lambda:InvokeFunction"
+        - Key: Principal
+          Value: events.amazonaws.com
+      Tags:
+        - Key: doNotShutDown
+          Value: true
+

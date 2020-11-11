@@ -1,0 +1,16 @@
+template_path: prisma-registry-cleaner/lambda-stack.yaml
+dependencies:
+  - "{{ environment }}/{{ region }}/common/s3-bucket.yaml"
+  - "{{ environment }}/{{ region }}/{{ app_name }}/iam-stack.yaml"
+parameters:
+  RoleNameSuffix: !stack_output "{{ environment }}/{{ region }}/{{ app_name }}/iam-stack.yaml::PrismaRegistryCleanerLambdaRoleNameSuffix"
+  HandlerName: main.lambda_handler
+  Timeout: "900"
+  LambdaName: {{ app_name }}
+  LambdaDescription: Lambda function to clean prisma registry settings.
+  S3BucketName: !stack_output "{{ environment }}/{{ region }}/common/s3-bucket.yaml::PrismaLambdasBucketName"
+  LambdaZip: "{{ app_name }}.zip"
+  EventName: "{{ app_name }}-event"
+  EventDescription: "Cloudwatch Event to trigger {{ app_name }} lambda in schedule."
+  ScheduleExpression: cron(0 1 ? * * *)
+
