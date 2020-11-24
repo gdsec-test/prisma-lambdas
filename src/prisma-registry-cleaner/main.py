@@ -12,16 +12,20 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-PRISMA_COMPUTE_REST_API_URL = "https://us-east1.cloud.twistlock.com/us-2-158254964/api/v1"
+PRISMA_COMPUTE_REST_API_URL = (
+    "https://us-east1.cloud.twistlock.com/us-2-158254964/api/v1"
+)
 
 
 class ExitPrismaCleaner(Exception):
     """Exiting Prisma Cleaner due to fatal failure"""
+
     pass
 
 
 class SecretManagerRetrievalError(Exception):
     """Unable to retrieve API keys from Secret Manager"""
+
     pass
 
 
@@ -40,10 +44,7 @@ def lambda_handler(event, context):
         trim_prisma_registry(registry)
         put_prisma_registry(token, registry)
 
-        return {
-            'statusCode': 200,
-            'body': json.dumps('Successfully Updated')
-        }
+        return {"statusCode": 200, "body": json.dumps("Successfully Updated")}
     except:
         log.exception("Error while executing prisma cleaner")
         raise
@@ -51,13 +52,15 @@ def lambda_handler(event, context):
 
 def trim_prisma_registry(registry):
     """Trim prisma registry"""
-    registry['specifications'] = []
+    registry["specifications"] = []
 
 
 def put_prisma_registry(token, registry):
     """Override prisma registry setting"""
 
-    return invoke_prisma_api(HTTPMethod.PUT, "/settings/registry", payload=registry, token=token)
+    return invoke_prisma_api(
+        HTTPMethod.PUT, "/settings/registry", payload=registry, token=token
+    )
 
 
 def get_prisma_registry(token):
@@ -133,15 +136,13 @@ def invoke_prisma_api(http_method, route, payload=None, token=None):
         else:
             response = session.get(full_url, data=payload, timeout=5.0)
     except:
-        log.exception(
-            f"Exception occurred in making {pp_request} to Prisma API")
+        log.exception(f"Exception occurred in making {pp_request} to Prisma API")
         raise ExitPrismaCleaner
 
     status_code = response.status_code
 
     if status_code != 200:
-        log.error(
-            f"Prisma API {pp_request} failed with status code: {status_code}")
+        log.error(f"Prisma API {pp_request} failed with status code: {status_code}")
         raise ExitPrismaCleaner
 
     log.info(f"Successfully Invoked {pp_request} to Prisma API")
@@ -180,13 +181,13 @@ def init():
 def main():
     # main() is useful for testing locally. not used when run in Lambda
     test_event = {
-        'function-name': "echo",
-        'new-version': "1",
-        'alias-name': "myalias",
-        'steps': 10,
-        'interval': 5,
-        'type': "linear",
-        'health-check': True
+        "function-name": "echo",
+        "new-version": "1",
+        "alias-name": "myalias",
+        "steps": 10,
+        "interval": 5,
+        "type": "linear",
+        "health-check": True,
     }
     log.info(lambda_handler(test_event, ""))
 

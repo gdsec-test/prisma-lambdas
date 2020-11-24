@@ -144,3 +144,4 @@ cython_debug/
 ## Custom
 .venv-*
 .DS_Store
+.vscode

@@ -23,7 +23,7 @@ $ source .venv-local/bin/activate
 (.venv-local) $ pip install --upgrade pip
 (.venv-local) $ pip install -r requirements-local.txt
 (.venv-local) $ pre-commit install --install-hooks
-(.venv-local) $ deactivate
+(.venv-local) $ deactivate # Choice
 ```
 
 ### Creating Infrastructure

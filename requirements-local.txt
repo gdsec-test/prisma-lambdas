@@ -1,6 +1,8 @@
 sceptre>=2.4.0
+boto3==1.16.6
+requests==2.24.0
 tartufo
 pre-commit
 awscli
-boto3==1.16.6
-requests==2.24.0
+black
+pylint
